@@ -131,11 +131,6 @@ class Generator:
 		# self.page_configuration.draw_debug_layout()
 
 	def draw_line_layout(self, line_configuration, top_y):
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.ascender_line_offset, secondary_line_color)
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.height_line_offset, main_line_color)
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.base_line_offset, main_line_color)
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.descender_line_offset, secondary_line_color)
-
 		number_of_slants = int(self.page_configuration.working_area.size.x / line_configuration.slant_lines_spacing())
 		for i in range(number_of_slants):
 			self.page_configuration.draw_slant_line(line_configuration.slant_lines_angle, Point(line_configuration.slant_lines_spacing() * i, top_y + line_configuration.descender_line_offset), line_configuration.line_height())
@@ -149,6 +144,11 @@ class Generator:
 		squares_drawn += self.draw_checkers(line_configuration, top_y + line_configuration.ascender_line_offset, line_configuration.ascender_logical_height, squares_drawn)
 		squares_drawn += self.draw_checkers(line_configuration, top_y + line_configuration.height_line_offset, line_configuration.x_logical_height, squares_drawn)
 		squares_drawn += self.draw_checkers(line_configuration, top_y + line_configuration.base_line_offset, line_configuration.descender_logical_height, squares_drawn)
+		
+		self.page_configuration.draw_horizontal_line(top_y + line_configuration.ascender_line_offset, secondary_line_color)
+		self.page_configuration.draw_horizontal_line(top_y + line_configuration.height_line_offset, main_line_color)
+		self.page_configuration.draw_horizontal_line(top_y + line_configuration.base_line_offset, main_line_color)
+		self.page_configuration.draw_horizontal_line(top_y + line_configuration.descender_line_offset, secondary_line_color)
 
 	def draw_checkers(self, line_configuration, y, count, squares_drawn):
 		for i in range(count):
