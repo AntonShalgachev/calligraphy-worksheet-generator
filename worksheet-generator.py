@@ -36,7 +36,7 @@ class Rect:
 
 
 class LineConfiguration:
-	def __init__(self, nib_width, ascender_logical_height, x_logical_height, descender_logical_height, space_logical_height, slant_lines_angle, slant_lines_logical_spacing, letter_direction_angle, letter_direction_logical_spacing):
+	def __init__(self, nib_width, ascender_logical_height=2, x_logical_height=4, descender_logical_height=2, space_logical_height=1, slant_lines_angle=45, slant_lines_logical_spacing=10, letter_direction_angle=90, letter_direction_logical_spacing=10):
 		self.nib_width = nib_width
 		self.ascender_logical_height = ascender_logical_height
 		self.x_logical_height = x_logical_height
@@ -165,11 +165,17 @@ def generate_page(page_configuration, line_configuration):
 	filename = 'worksheet_{}mm_{}-{}-{}.pdf'.format(line_configuration.nib_width, line_configuration.ascender_logical_height, line_configuration.x_logical_height, line_configuration.descender_logical_height)
 	gen.save(filename)
 	print('Worksheet saved to "{}"'.format(filename))
-	# subprocess.run(['open', filename], check=True)
 
 
 def main():
-	generate_page(PageConfiguration('L', 'A4', 2), LineConfiguration(3.8, 2, 4, 2, 0.5, 45, 10, 90, 10))
+	page_configuration = PageConfiguration(orientation='L', page_format='A4', margin=5)
+	line_configurations = [
+		LineConfiguration(3.8, space_logical_height=0.5),
+		LineConfiguration(6, space_logical_height=0.2),
+	]
+
+	for line_configuration in line_configurations:
+		generate_page(page_configuration, line_configuration)
 
 
 if __name__ == '__main__':
