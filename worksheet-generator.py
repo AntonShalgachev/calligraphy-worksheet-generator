@@ -69,11 +69,18 @@ class LineConfiguration:
 
 class PageConfiguration:
 	def __init__(self, orientation, page_format, margin):
-		self.fpdf = FPDF(orientation, 'mm', page_format)
+		self.orientation = orientation
+		self.page_format = page_format
 		self.margin = margin
 
-		size = Point(self.fpdf.w - 2 * margin, self.fpdf.h - 2 * margin)
-		top_left = Point(margin, margin)
+
+class PageContext:
+	def __init__(self, config):
+		self.page_configuration = config
+		self.fpdf = FPDF(config.orientation, 'mm', config.page_format)
+
+		size = Point(self.fpdf.w - 2 * config.margin, self.fpdf.h - 2 * config.margin)
+		top_left = Point(config.margin, config.margin)
 		self.working_area = Rect(size, top_left)
 
 	def draw_horizontal_line(self, y, color):
@@ -106,20 +113,26 @@ class PageConfiguration:
 
 	def draw_debug_layout(self):
 		self.set_color((0, 0, 0))
-		self.fpdf.line(self.working_area.top_left.x, self.working_area.top_left.y, self.working_area.bottom_right.x, self.working_area.bottom_right.y)
-		self.fpdf.line(self.working_area.bottom_left.x, self.working_area.bottom_left.y, self.working_area.top_right.x, self.working_area.top_right.y)
+		area = self.working_area
+		tl = area.top_left
+		tr = area.top_right
+		br = area.bottom_right
+		bl = area.bottom_left
+		self.fpdf.line(tl.x, tl.y, br.x, br.y)
+		self.fpdf.line(bl.x, bl.y, tr.x, tr.y)
+		self.fpdf.rect(tl.x, tl.y, area.size.x, area.size.y, 'D')
 
 
 class Generator:
 	def __init__(self, page_configuration):
-		self.page_configuration = page_configuration
+		self.page_context = PageContext(page_configuration)
 
 	def add_page(self, line_configuration):
-		self.page_configuration.fpdf.add_page()
+		self.page_context.fpdf.add_page()
 
 		space_height = line_configuration.space_height()
 		line_height = line_configuration.line_height()
-		available_height = self.page_configuration.working_area.size.y
+		available_height = self.page_context.working_area.size.y
 		number_of_lines = int((available_height - space_height) / line_configuration.full_height());
 
 		layout_height = number_of_lines * line_height + (number_of_lines - 1) * space_height
@@ -128,35 +141,35 @@ class Generator:
 		for i in range(number_of_lines):
 			self.draw_line_layout(line_configuration, layout_offset + i * line_configuration.full_height())
 
-		# self.page_configuration.draw_debug_layout()
+		# self.page_context.draw_debug_layout()
 
 	def draw_line_layout(self, line_configuration, top_y):
-		number_of_slants = int(self.page_configuration.working_area.size.x / line_configuration.slant_lines_spacing())
+		number_of_slants = int(self.page_context.working_area.size.x / line_configuration.slant_lines_spacing())
 		for i in range(number_of_slants):
-			self.page_configuration.draw_slant_line(line_configuration.slant_lines_angle, Point(line_configuration.slant_lines_spacing() * i, top_y + line_configuration.descender_line_offset), line_configuration.line_height())
+			self.page_context.draw_slant_line(line_configuration.slant_lines_angle, Point(line_configuration.slant_lines_spacing() * i, top_y + line_configuration.descender_line_offset), line_configuration.line_height())
 
-		number_of_letter_directions = int(self.page_configuration.working_area.size.x / line_configuration.letter_direction_spacing())
+		number_of_letter_directions = int(self.page_context.working_area.size.x / line_configuration.letter_direction_spacing())
 		for i in range(number_of_letter_directions):
-			self.page_configuration.draw_slant_line(line_configuration.letter_direction_angle, Point(line_configuration.letter_direction_spacing() * i, top_y + line_configuration.descender_line_offset), line_configuration.line_height())
+			self.page_context.draw_slant_line(line_configuration.letter_direction_angle, Point(line_configuration.letter_direction_spacing() * i, top_y + line_configuration.descender_line_offset), line_configuration.line_height())
 
-		self.page_configuration.set_color(checkers_color)
+		self.page_context.set_color(checkers_color)
 		squares_drawn = 0
 		squares_drawn += self.draw_checkers(line_configuration, top_y + line_configuration.ascender_line_offset, line_configuration.ascender_logical_height, squares_drawn)
 		squares_drawn += self.draw_checkers(line_configuration, top_y + line_configuration.height_line_offset, line_configuration.x_logical_height, squares_drawn)
 		squares_drawn += self.draw_checkers(line_configuration, top_y + line_configuration.base_line_offset, line_configuration.descender_logical_height, squares_drawn)
 		
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.ascender_line_offset, secondary_line_color)
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.height_line_offset, main_line_color)
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.base_line_offset, main_line_color)
-		self.page_configuration.draw_horizontal_line(top_y + line_configuration.descender_line_offset, secondary_line_color)
+		self.page_context.draw_horizontal_line(top_y + line_configuration.ascender_line_offset, secondary_line_color)
+		self.page_context.draw_horizontal_line(top_y + line_configuration.height_line_offset, main_line_color)
+		self.page_context.draw_horizontal_line(top_y + line_configuration.base_line_offset, main_line_color)
+		self.page_context.draw_horizontal_line(top_y + line_configuration.descender_line_offset, secondary_line_color)
 
 	def draw_checkers(self, line_configuration, y, count, squares_drawn):
 		for i in range(count):
-			self.page_configuration.draw_square(y + i * line_configuration.nib_width, line_configuration.nib_width, (squares_drawn + i) % 2 == 1)
+			self.page_context.draw_square(y + i * line_configuration.nib_width, line_configuration.nib_width, (squares_drawn + i) % 2 == 1)
 		return count
 
 	def save(self, path):
-		self.page_configuration.fpdf.output(path, 'F')
+		self.page_context.fpdf.output(path, 'F')
 
 
 def generate_page(page_configuration, line_configuration):
